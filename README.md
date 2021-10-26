@@ -1,4 +1,5 @@
-# Reproducing DER compilation failure
+# Reproducing [DER crate](https://github.com/RustCrypto/formats/) compilation failure
+See this repo https://github.com/mishazharov/der-repro for a small test case to show the error
 
 ## Versions
 
@@ -52,3 +53,22 @@ Error: Compiling your crate to WebAssembly failed
 Caused by: failed to execute `cargo build`: exited with exit status: 101
   full command: "cargo" "build" "--lib" "--release" "--target" "wasm32-unknown-unknown"
 ```
+
+## Proposed fix
+I did some basic testing and found that patching the encoder with the following line appeared to resolve it on v0.4.4, but I didn't get the chance to test it on master.
+In https://github.com/RustCrypto/formats/blob/master/der/src/encoder.rs#L159
+```diff
+        Header::new(Tag::Sequence, length).and_then(|header| header.encode(self))?;
+
+        let mut nested_encoder = Encoder::new(self.reserve(length)?);
+        f(&mut nested_encoder)?;
+
++       let len: usize = length.try_into()?;
++       if nested_encoder.finish()?.len() == len {
+-       if nested_encoder.finish()?.len() == length.try_into()? {
+            Ok(())
+        } else {
+            self.error(ErrorKind::Length { tag: Tag::Sequence })
+        }
+```
+I wanted to get some thoughts before opening a PR though because this seems like a bandaid fix.
