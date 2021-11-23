@@ -20,11 +20,10 @@ Arch: x86_64
 
 ## Steps to reproduce
 
-Run `wasm-pack build --no-typescript --release`.
+Run `cargo build --lib --release --target wasm32-unknown-unknown`.
 
 ## Error shown
 ```
-   Compiling der v0.4.4
 error[E0277]: can't compare `usize` with `()`
    --> /home/misha/.cargo/registry/src/github.com-1ecc6299db9ec823/der-0.4.4/src/encoder.rs:151:43
     |
@@ -49,26 +48,9 @@ note: required because of the requirements on the impl of `TryFrom<Length>` for 
 
 For more information about this error, try `rustc --explain E0277`.
 error: could not compile `der` due to 2 previous errors
-Error: Compiling your crate to WebAssembly failed
-Caused by: failed to execute `cargo build`: exited with exit status: 101
-  full command: "cargo" "build" "--lib" "--release" "--target" "wasm32-unknown-unknown"
 ```
 
-## Proposed fix
-I did some basic testing and found that patching the encoder with the following line appeared to resolve it on v0.4.4, but I didn't get the chance to test it on master.
-In https://github.com/RustCrypto/formats/blob/master/der/src/encoder.rs#L159
-```diff
-        Header::new(Tag::Sequence, length).and_then(|header| header.encode(self))?;
+## Expected behaviour
 
-        let mut nested_encoder = Encoder::new(self.reserve(length)?);
-        f(&mut nested_encoder)?;
-
-+       let len: usize = length.try_into()?;
-+       if nested_encoder.finish()?.len() == len {
--       if nested_encoder.finish()?.len() == length.try_into()? {
-            Ok(())
-        } else {
-            self.error(ErrorKind::Length { tag: Tag::Sequence })
-        }
-```
-I wanted to get some thoughts before opening a PR though because this seems like a bandaid fix.
+When running `cargo build --lib --release` this error does not manifest itself, so it would be nice if it
+also didn't show up on the wasm target.
