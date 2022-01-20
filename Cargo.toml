@@ -12,4 +12,4 @@ crate-type = ["cdylib", "rlib"]
 getrandom = { version = "0.2", features = ["js"], default-features = false }
 wasm-bindgen = { version = "0.2.73", features = ["serde-serialize"], default-features = false }
 rand_core = { version = "0.6.3", features = ["std"], default-features = false }
-der = { version = "0.4", features = ["bigint"], default-features = false }
+der = { version = "0.4.4", features = ["bigint"], default-features = false }
